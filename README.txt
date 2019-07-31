@@ -3,8 +3,8 @@ This program does the following for encryption:
 2. For all files:
 	- Creates a unique AES key.
 	- Encrypts the contents of the file using that AES key.
-	- Encrypts all necessary decrypting data, namely the file name, AES key (represented in hex), and iv (represented in 		  hex), using a hard-coded public RSA key.
-	- Stores the encrypted data as hex in the keyfile ".AESKeys.txt" found in the target directory. Every entry to the 		  keyfile is ended with a newline.
+	- Encrypts all necessary decrypting data, namely the file name, AES key (represented in hex), and iv (represented in hex), using a hard-coded public RSA key.
+	- Stores the encrypted data as hex in the keyfile ".AESKeys.txt" found in the target directory. Every entry to the keyfile is ended with a newline.
 
 This program does the following for decryption:
 1. Opens the keyfile ".AESKeys.txt"
