@@ -8,6 +8,7 @@ g++ -g c++aes.cpp -I /usr/local/include/cryptopp/ /usr/local/lib/libcryptopp.a -
 #include <dirent.h>
 #include "modes.h"
 #include "aes.h"
+#include "rsa.h"
 #include "filters.h"
 #include "files.h"
 #include "cryptlib.h"
@@ -27,43 +28,79 @@ using std::remove;
 using std::ios;
 using std::invalid_argument;
 
+const string KEYFILE_NAME = ".AESKeys.txt";
+string DIRPATH;
 unsigned short KEYLENGTH;
+const string PUBLIC_KEY_HEX =
+    "308201A0300D06092A864886F70D01010105000382018D00308201880282018100AA8EC7C15039990854ADC8B8ACB929B4BA06C5A67198400DEBD8904AE9045EB4ECCAAE609140029CE2DA803D7A1878378A6BCE72A1E224C9EBB317B477BDB8B95B41E6DAC1CBFE881B18E44C4A88C9D9DFCD348880C05F0A218B1B0E244E0D37E5A3883B353732BDDCE107A3B6B6B409A781145A58277BCB832E302ADC9F3A44F865A8E3953E2F82CC1CA4C272FC7797CCA0A098AD8D18734134E93953999B8B78B19DF55B42275FF7D5E212971BDE566D617EBB67335902179ED8F4B0EDC1095DE38A1BEE1BE3C685FD24B03F3A160824993B2E0CF8EF2DDCBB203A63FE0FB666D52B850E881B192298D56975A9CD0EFF3CADF5C9CA7849BCF62B448C66F2467F1E4E319C95F11BD08F765C942761D97F7955DAE8C3CE117E55B34B54A70AB14E8903993EF790EA3C19AB0DD03ECEBDA2E5E03C354AF6B4569E349AF962D00AA488E50481E267020B96630A65F992934932675E63878FD6F67D465E4ADBB3B016B4DDED70323FC6DB73AADDE3F7BBB76DEC234A2037661277A9EFF885BA26F1020111";
+const string PRIVATE_KEY_HEX =
+    "308206FB020100300D06092A864886F70D0101010500048206E5308206E10201000282018100AA8EC7C15039990854ADC8B8ACB929B4BA06C5A67198400DEBD8904AE9045EB4ECCAAE609140029CE2DA803D7A1878378A6BCE72A1E224C9EBB317B477BDB8B95B41E6DAC1CBFE881B18E44C4A88C9D9DFCD348880C05F0A218B1B0E244E0D37E5A3883B353732BDDCE107A3B6B6B409A781145A58277BCB832E302ADC9F3A44F865A8E3953E2F82CC1CA4C272FC7797CCA0A098AD8D18734134E93953999B8B78B19DF55B42275FF7D5E212971BDE566D617EBB67335902179ED8F4B0EDC1095DE38A1BEE1BE3C685FD24B03F3A160824993B2E0CF8EF2DDCBB203A63FE0FB666D52B850E881B192298D56975A9CD0EFF3CADF5C9CA7849BCF62B448C66F2467F1E4E319C95F11BD08F765C942761D97F7955DAE8C3CE117E55B34B54A70AB14E8903993EF790EA3C19AB0DD03ECEBDA2E5E03C354AF6B4569E349AF962D00AA488E50481E267020B96630A65F992934932675E63878FD6F67D465E4ADBB3B016B4DDED70323FC6DB73AADDE3F7BBB76DEC234A2037661277A9EFF885BA26F10201110282018003229FE8426A7875CCD9C86546F09488072F2EED699E17C40546CDF25175BA36263C3243A8512D3978E0407999C618CC50A982DA93EABECB3DBE961533246DBFA480452F50BD2962807F843257F55688B5FF10F737129855D5528E9D6FB9E7C5BBC02EBD52DC4F0CE6E24114E44CC5311E5F8C9C0380B9CE180EF779422C56B7DB27840BB682159449662C70C03B3AAB42D202F3BF6CF254F132DAE01CD4B4BDDBA161F66480465EF0CA8518CFF446E91E3EF7FA087C3CEE27F6AF4843409B13E81E7C07384AAC07B2A8A30C156C4A54A5FB7D65D3B348BDC15611501762178ED133250E3C71A09C20221B7A9D72A56E7EA828F2C121D34057E438364C3FB4EB77E071004EF7524761017A59E71008E93375DCAB00010B0E4E7E85457D38AA62C24F62CC2F855443C6512E372D4D25B5D588DE89060A908A48D670B5637B53A00DA561AB3ABB7DDACBFBF9C2BB59296255DB1CF6213FBF13F3BFA848EF984230AD8B9838A595F5DDE90974B10978404A362E9250824B063B70FF8E0602D6EAF10281C100BC29793335B1E62823ED1A4A99C434EC4F284BE92C5642AD2CB4237E75E4FCC346821F7F39B69FD5804712FD680E1AE5C5237D75C85689311F25889071D11337A0463E020D041FDAE93F2C7808A539ED498743DBF6E9E20C7A43FF01A60A9C96E1FAD44EF8C4E282DFD84ABC677142E6342266E0A4944FD0277A701A59228D83BECD69C16DE49FC3EE400884CB69567CA2B71618FCE51D1D440D56B43C2561B3041D5FEEE3B715A105B7C74D4543E69D27C1878CA4F891BD9B07EA32682D8E010281C100E80C8293288BD59537D3CB077E72E25229997CD4B0F0042E00F01BB6F60DAB004574C5CC2FDF5A1667DF1EC4320BBDE1832A1683C3DD716C56EB172A4D0C39D23259A6852E36BBAF7D6649FD0B4D0FF7ACE660DBBE6DF8FABC622F1F1291D2B7887C63E693772CCD37CDF497C868BB9A0E7A95D714DE564E4E5F045B7C71B083FF6386E0328CA2592AFE1457646AA3FE018529C4BC49D815E682935D8B28413E9820BEC1C303B7CAB6ECB12501F2F8885C451DD4FE80B4800CBA3E18B64778F10281C1008FE37ACCCEB537881B79141AEE0E82D2D31ED0A34005BA846D7AB1BB0EDC48D1904563614A405C1BBC72960D1356149196C0C95A11AB9616813AD1D7DE90D275D4EA6BA73721458948F412F260F6D1F1B0B2BB6BF90D3463E506D21051CBE1281638480027A59E27D85A1B088B569C91EBA1D63350ADA672001255B9CBB102CE287EF684DB90B668A721E8658C7DBA9B8B7CF2C7D072F82570466F7AC4950E79D5F8586B62D74CC66DC8C5957133EC964B93FE3E60096063D0E7EF53B913C6F10281C028F32619F818AD3873437E2E7FB9EBB425757061C4DF0FCBE20C41204989F1000C41C88D71DC1EF4E5275FC84511218226349A8FB92714040F56A9BC2BB6DD06F9D395DB44640300D9E4DFE15C58E4B33CA12026C74095596C89CC148ACE707ABDBB9928B09C8F6F82518584326CD5CFE46FFC5321CCE20DD1984C10250501083C209F54BDA058E28F1DC75AB75E1CF096DB439B30494440199E9279EB6174ECEDAB6CF5044BF341E40BA6CA4BA3590901395F9E0ECB6B25A7E4A18BE3EE7EC10281C05F54F60EA447D90A4A631AC3900EBE908EA3B696E239C95206369DF3B2B45D8CEDD796E35259D4E9BB995CB3BCFD2571C244B50873E1DC61D87F18E6B63DBA88FD7DE9F9C26E046AA83985BFC216D42B9F799724D941005D97713BD7DAE5187475311F2947262303A96D7930CCEC13D89865F4748BDF9BE426B91D4251EF7D712770FB5AA9D27891A25C72C97A4B378F3B17B53BE0A2884DC9469551109B496140BF9675204E4CF7FFEDE675CF863CFB36E233E27A1ED1BC221FCA84A98C89C7";
 
-void encrypt(const string& dirPath);
-vector<string> getFilePaths(const string& dirPath);
-string encryptContents(const string& filePath, const string& contents);
-void storeAndPrintKey(const string& filePath, const SecByteBlock& key, const SecByteBlock& iv);
 
-void decrypt(const string& dirPath);
-void parseAndPrintLine(const string& fileContents, string& filePath, string& keyString, string& ivString);
-string decryptContents(const string& contents, const SecByteBlock& key, const SecByteBlock& iv);
-
+// Encrypting functions
+void aesEncrypt();
+vector<string> getFileNames();
+SecByteBlock generateAESKey();
+SecByteBlock generateAESIV();
+string aesEncryptContents(const SecByteBlock& key, const SecByteBlock& iv, const string& contents);
+string rsaEncrypt(const string& input);
+void storeEncryptedAESData(const string& encryptedEntry);
 string stringToHex(const string& input);
+
+// Decrypting functions
+void aesDecrypt();
+string rsaDecrypt(const string& input);
+void parseLine(const string& lineString, string& fileName, string& keyString, string& ivString);
+string aesDecryptContents(const string& contents, const SecByteBlock& key, const SecByteBlock& iv);
+void deleteKeyFile(fstream& keyfile, const string& keyPath);
 string hexToString(const string& input);
-string readFileContents(const string& filePath);
-void writeAlteredContents(const string& filePath, const string& cipherText);
+
+// General-purpose functions
+string readfileContents(const string& filePath);
+void writeAlteredContents(const string& filePath, const string& alteredContents);
 
 
 /**
  * This function is effectively the main for encryption.
- * It uses getFilePaths to get all the file names in the directory, then iterates through all 
- * those files and calls all the functions vital to the encryption of the file
+ * It uses getFileNames to get all the file names in the directory, then iterates through all 
+ * those files and calls all the functions vital to the encryption of the file and AES data
  */
-void encrypt(const string& dirPath) {
+void aesEncrypt() {
     // Initializes vector with all file names and the file object that will be reading them
-    vector<string> filePaths;
-    filePaths = getFilePaths(dirPath);
+    vector<string> fileNames;
+    fileNames = getFileNames();
 
     // Iterates through file names and opens and encrypts them one by one
-    for (int i = 0; i < filePaths.size(); ++i) {
-        string contents;
-        contents = readFileContents(filePaths.at(i));
+    for (int i = 0; i < fileNames.size(); ++i) {
+        string contents = readfileContents(DIRPATH + fileNames.at(i));
 
-        // Encrypts the contents of the file and stores it in the string cipherText
-        string cipherText;
-        cipherText = encryptContents(filePaths.at(i), contents);
+        // Generates a unique AES key and iv, then uses them to encrypt the contents of the file
+        SecByteBlock key = generateAESKey();
+        SecByteBlock iv = generateAESIV();
+        string cipherText = aesEncryptContents(key, iv, contents);
 
-        writeAlteredContents(filePaths.at(i), cipherText);
+        // Deletes the previous data and writes the encrypted data to the file
+        writeAlteredContents(DIRPATH + fileNames.at(i), cipherText);
+
+        // Turns the key and iv from SecByteBlock to string, so that it can be stored
+        string keyString(reinterpret_cast<const char*>(key.data()), key.size());
+        string ivString(reinterpret_cast<const char*>(iv.data()), iv.size());
+
+        // Turns the keyString and ivString into hex, so it can be easily read
+        string keyHex = stringToHex(keyString);
+        string ivHex = stringToHex(ivString);
+
+        // Creates the full line of AES data, including the fileName, keyHex, and ivHex,
+        // and encrypts it all using the public RSA key
+        string fullEntry = fileNames[i] + "\t" + keyHex + "\t" + ivHex;
+        string encryptedEntry = rsaEncrypt(fullEntry);
+        storeEncryptedAESData(stringToHex(encryptedEntry));
+
+        // Output the file along with its key and iv
+        cout << "WRITING:" << endl;
+        cout << fileNames[i] << endl;
+        cout << "key: " << keyHex << "\t" << keyString.length() << endl;
+        cout << "iv: " << ivHex << "\t" << ivString.length() << endl << endl;
     }
 }
 
@@ -71,162 +108,107 @@ void encrypt(const string& dirPath) {
 /**
  * Opens the given directory and writes all the file names in that directory into a vector for
  * later use. Notice, it does not read in the current directory (.), the previous directory (..),
- * or the key file (.AESKeys.txt)
+ * or the keyfile (.AESKeys.txt)
  */
-vector<string> getFilePaths(const string& dirPath) {
+vector<string> getFileNames() {
     DIR* dir;
     dirent* pdir;
     vector<string> files;
 
-    dir = opendir(dirPath.c_str());
+    dir = opendir(DIRPATH.c_str());
 
     // Reads everything in the directory and puts the names in a vector, excluding '.' and '..'
     while (pdir = readdir(dir)) {
-        if ((string)pdir->d_name != "." && (string)pdir->d_name != ".." && (string)pdir->d_name != ".AESKeys.txt") {
-            files.push_back(dirPath + pdir->d_name);
+        if ((string)pdir->d_name != "." && (string)pdir->d_name != ".." && (string)pdir->d_name != KEYFILE_NAME) {
+            files.push_back(pdir->d_name);
         }
     }
 
     return files;
 }
 
-
 /**
- * Takes the contents of the file stored in the string 'contents', encrypts those contents, and stores them in the
- * string 'cipherText'. Does not return a value, but rather alters cipherText directly as a pass-by-reference.
+ * Generates a unique AES key and returns it
  */
-string encryptContents(const string& filePath, const string& contents) {
+SecByteBlock generateAESKey() {
     AutoSeededRandomPool rnd;
-    string cipherText;
 
     // Generate a random key
     SecByteBlock key(0x00, KEYLENGTH);
     rnd.GenerateBlock(key, key.size());
 
+    return key;
+}
+
+
+/**
+ * Generates a unique AES iv and returns it
+ */
+SecByteBlock generateAESIV() {
+    AutoSeededRandomPool rnd;
+
     // Generate a random IV
     SecByteBlock iv(AES::BLOCKSIZE);
     rnd.GenerateBlock(iv, iv.size());
 
+    return iv;
+}
+
+
+/**
+ * Takes the contents of the file stored in the given string 'contents', encrypts those contents, and returns them
+ */
+string aesEncryptContents(const SecByteBlock& key, const SecByteBlock& iv, const string& contents) {
+    string cipherText;
+
     // Create Cipher Text
     CryptoPP::AES::Encryption aesEncryption(key, KEYLENGTH);
     CryptoPP::CBC_Mode_ExternalCipher::Encryption cbcEncryption(aesEncryption, iv);
-    CryptoPP::StreamTransformationFilter stfEncryptor(cbcEncryption, new CryptoPP::StringSink(cipherText));  //FileSink
+    CryptoPP::StreamTransformationFilter stfEncryptor(cbcEncryption, new CryptoPP::StringSink(cipherText));
     stfEncryptor.Put(reinterpret_cast<const unsigned char*>(contents.c_str()), contents.length());
     stfEncryptor.MessageEnd();
-
-    // Change key into string so that it can be written to the key file
-    storeAndPrintKey(filePath, key, iv);
 
     return cipherText;
 }
 
 
 /**
- * Takes the filePath of the file it just encrypted and the key that encrypted it and stores them together in the file
- * ".AESKeys.txt"
- * The key has to be turned into a string in order to be stored
+ * Uses the public key to encrypt the given input, then returns the encrypted data
  */
-void storeAndPrintKey(const string& filePath, const SecByteBlock& key, const SecByteBlock& iv) {
-    // Turn the key and iv into strings
-    string keyString(reinterpret_cast<const char*>(key.data()), key.size());
-    string ivString(reinterpret_cast<const char*>(iv.data()), iv.size());
-    string keyHex = stringToHex(keyString);
-    string ivHex = stringToHex(ivString);
+string rsaEncrypt(const string& input) {
+    AutoSeededRandomPool rng;
+
+    // Setup the public key using the hardcoded global public key
+    RSA::PublicKey publicKey;
+    StringSource publicSS(hexToString(PUBLIC_KEY_HEX), true);
+    publicKey.BERDecode(publicSS);
+
+    // Encryption
+    string encryptedString;
+
+    RSAES_OAEP_SHA_Encryptor e(publicKey);
+
+    StringSource ss1(input, true,
+        new PK_EncryptorFilter(rng, e,
+            new StringSink(encryptedString)
+        ) // PK_EncryptorFilter
+    ); // StringSource
+
+    return encryptedString;
+}
+
+
+/**
+ * Takes a string and appends it to the end of the keyfile, .AESKeys.txt
+ */
+void storeEncryptedAESData(const string& encryptedEntry) {
+    string keyfilePath = DIRPATH + KEYFILE_NAME;
 
     // Store the key and the dirPath to the file it just encrypted together in ".AESKeys.txt"
     fstream file;
-    string keyFilePath = filePath.substr(0, filePath.find_last_of("/") + 1) + ".AESKeys.txt";
-    file.open(keyFilePath, fstream::out | ios_base::app | ios::binary);
-    file << filePath << "\t" << keyHex << "\t" << ivHex << endl;
+    file.open(keyfilePath, fstream::out | ios_base::app | ios::binary);
+    file << encryptedEntry << endl;
     file.close();
-
-    // Output what was just written to the .AESKeys.txt file to the terminal
-    cout << "WRITING:" << endl;
-    cout << filePath << endl;
-    cout << "key: " << keyHex << "\t" << keyString.length() << endl;
-    cout << "iv: " << ivHex << "\t" << ivString.length() << endl << endl;
-}
-
-
-/**
- * This function is effectively the main for decryption.
- * It uses the .AESKeys.txt file to find all the encrypted file names in the directory, then
- * iterates through all those files and calls all the functions vital to the decryption of the file
- */
-void decrypt(const string& dirPath) {
-    fstream keyFile;
-    string keyPath = dirPath + ".AESKeys.txt";
-    keyFile.open(keyPath, fstream::in | ios::binary);
-
-    string fileContents;
-    while (getline(keyFile, fileContents)) {
-        string filePath;
-        string keyString;
-        string ivString;
-
-        parseAndPrintLine(fileContents, filePath, keyString, ivString);
-
-        fileContents.clear();
-
-        // Turns the keyString and ivString back into usable keys
-        SecByteBlock key((const byte*)keyString.data(), keyString.size());
-        SecByteBlock iv((const byte*)ivString.data(), ivString.size());
-
-        // Stores all file contents in the string 'contents'
-        string contents;
-        contents = readFileContents(filePath);
-
-        // Decrypts contents and stores them in plaintext
-        string plainText = decryptContents(contents, key, iv);
-
-        writeAlteredContents(filePath, plainText);
-    }
-
-    // Close the file from reading, then open it again and clear it, then delete the file entirely
-    // The redundancy of clearing and deleting the file should ensure no data is ever left behind
-    keyFile.close();
-    keyFile.open(keyPath, fstream::out | fstream::trunc | ios::binary);
-    keyFile.close();
-    if (remove(keyPath.c_str())) {
-        cout << endl << "Could not delete keyfile" << endl << endl;
-    }
-}
-
-
-/**
-* Takes a line of the .AESKeys.txt file and segments out the filePath, keyString, and ivString
-* It stores them in string variables and prints out their values in hex to the terminal
-*/
-void parseAndPrintLine(const string& fileContents, string& filePath, string& keyString, string& ivString) {
-    unsigned int pathEndIndex = fileContents.find("\t");
-    filePath = fileContents.substr(0, pathEndIndex);
-
-    // I multiply KEYLENGTH and BLOCKSIZE by 2 because each hex digit is a nibble, not a byte
-    string keyHex = fileContents.substr(pathEndIndex + 1, KEYLENGTH * 2);
-    string ivHex = fileContents.substr(fileContents.length() - AES::BLOCKSIZE * 2);
-    keyString = hexToString(keyHex);
-    ivString = hexToString(ivHex);
-
-    // Output what was just read from the AESKeys.txt file to the terminal
-    cout << "READING:" << endl;
-    cout << filePath << endl;
-    cout << "key: " << keyHex << "\t" << keyString.length() << endl;
-    cout << "iv: " << ivHex << "\t" << ivString.length() << endl << endl;
-}
-
-/**
- * Uses the library and the stored key and iv to decrypt the encrypted contents of a file
- */
-string decryptContents(const string& contents, const SecByteBlock& key, const SecByteBlock& iv) {
-    string plainText;
-
-    CryptoPP::AES::Decryption aesDecryption(key, KEYLENGTH);
-    CryptoPP::CBC_Mode_ExternalCipher::Decryption cbcDecryption(aesDecryption, iv);
-    CryptoPP::StreamTransformationFilter stfDecryptor(cbcDecryption, new CryptoPP::StringSink(plainText));
-    stfDecryptor.Put(reinterpret_cast<const unsigned char*>(contents.c_str()), contents.length());
-    stfDecryptor.MessageEnd();
-
-    return plainText;
 }
 
 
@@ -245,6 +227,123 @@ string stringToHex(const string& input) {
         output.push_back(lut[c & 15]);
     }
     return output;
+}
+
+
+/**
+ * This function is effectively the main for decryption.
+ * It decrypts the RSA encryption on the keyfile.
+ * The, it uses the keyfile to find all the encrypted file names in the directory, then
+ * iterates through all those files and calls all the functions vital to the decryption of the file
+ */
+void aesDecrypt() {
+    fstream keyfile;
+    string keyPath = DIRPATH + KEYFILE_NAME;
+    keyfile.open(keyPath, fstream::in | ios::binary);
+
+    string encryptedLineHex;
+    while (getline(keyfile, encryptedLineHex)) {
+        // Change hex we pulled from the file back into a string
+        string encryptedLineString = hexToString(encryptedLineHex);
+        // Decrypt the string using the RSA private key
+        string lineString = rsaDecrypt(encryptedLineString);
+
+        // Segment out the line into its parts, namely the fileName, keyHex, and ivHex
+        string fileName;
+        string keyHex;
+        string ivHex;
+        parseLine(lineString, fileName, keyHex, ivHex);
+
+        // Turn the keyHex and ivHex back into strings to they can be turned into SecByteBlocks
+        string keyString = hexToString(keyHex);
+        string ivString = hexToString(ivHex);
+
+        // Turn the keyString and ivString back into usable SecByteBlocks
+        SecByteBlock key((const byte*)keyString.data(), keyString.size());
+        SecByteBlock iv((const byte*)ivString.data(), ivString.size());
+
+        // Stores all file contents in the string 'contents'
+        string contents = readfileContents(DIRPATH + fileName);
+
+        // Decrypts contents and stores them in plaintext
+        string plainText = aesDecryptContents(contents, key, iv);
+
+        // Delete the encrypted contents from the file, and write the decrypted contents back in
+        writeAlteredContents(DIRPATH + fileName, plainText);
+    }
+
+    keyfile.close();
+
+    deleteKeyFile(keyfile, keyPath);
+}
+
+
+/**
+ * Uses the private key to decrypt the given input, then returns the decrypted data
+ */
+string rsaDecrypt(const string& input) {
+    AutoSeededRandomPool rng;
+
+    // Setup the private key using the hardcoded global private key
+    RSA::PrivateKey privateKey;
+    StringSource privateSS(hexToString(PRIVATE_KEY_HEX), true);
+    privateKey.BERDecode(privateSS);
+
+    // Decryption
+    string decryptedString;
+
+    RSAES_OAEP_SHA_Decryptor d(privateKey);
+
+    StringSource ss2(input, true,
+        new PK_DecryptorFilter(rng, d,
+            new StringSink(decryptedString)
+        ) // PK_DecryptorFilter
+    ); // StringSource
+
+    return decryptedString;
+}
+
+
+/**
+* Takes a string and segments out the fileName, keyString, and ivString, which are all passed by reference
+*/
+void parseLine(const string& lineString, string& fileName, string& keyHex, string& ivHex) {
+    unsigned int pathEndIndex = lineString.find("\t");
+    fileName = lineString.substr(0, pathEndIndex);
+
+    // I multiply KEYLENGTH and BLOCKSIZE by 2 because each hex digit is a nibble, not a byte
+    keyHex = lineString.substr(pathEndIndex + 1, KEYLENGTH * 2);
+    ivHex = lineString.substr(lineString.length() - AES::BLOCKSIZE * 2);
+}
+
+
+/**
+ * Decrypts the given string using the given key and iv
+ */
+string aesDecryptContents(const string& contents, const SecByteBlock& key, const SecByteBlock& iv) {
+    string plainText;
+
+    CryptoPP::AES::Decryption aesDecryption(key, KEYLENGTH);
+    CryptoPP::CBC_Mode_ExternalCipher::Decryption cbcDecryption(aesDecryption, iv);
+    CryptoPP::StreamTransformationFilter stfDecryptor(cbcDecryption, new CryptoPP::StringSink(plainText));
+    stfDecryptor.Put(reinterpret_cast<const unsigned char*>(contents.c_str()), contents.length());
+    stfDecryptor.MessageEnd();
+
+    return plainText;
+}
+
+
+/**
+ * Clears the keyfile, then deletes it entirely
+ */
+void deleteKeyFile(fstream& keyfile, const string& keyPath) {
+    // Open the keyfile and clear it, then delete the file entirely
+    // The redundancy of clearing and deleting the file should ensure no data is ever left behind
+    keyfile.open(keyPath, fstream::out | fstream::trunc | ios::binary);
+    keyfile.close();
+    if (remove(keyPath.c_str())) {
+        cout << endl << "Could not delete keyfile" << endl << endl;
+    }
 }
 
 
@@ -274,9 +373,9 @@ string hexToString(const string& input) {
 
 
 /**
- * Opens the file at the given filePath and reads in the contents, then returns them
+ * Opens the file at the given fileName and reads in the contents, then returns them
  */
-string readFileContents(const string& filePath) {
+string readfileContents(const string& filePath) {
     fstream file;
 
     file.open(filePath, fstream::in | ios::binary);
@@ -288,7 +387,7 @@ string readFileContents(const string& filePath) {
 
 
 /**
- * Opens and clears the file at the given filePath, writes in the given cipherText, 
+ * Opens and clears the file at the given fileName, writes in the given cipherText, 
  * and closes it.
  */
 void writeAlteredContents(const string& filePath, const string& alteredContents) {
@@ -302,6 +401,7 @@ void writeAlteredContents(const string& filePath, const string& alteredContents)
 
 
 int main(int argc, char* argv[]) {
+    // Checks to make sure the user entered all the necessary arguments
     if (argc != 4) {
         cout << endl << "First argument should be:" << endl;
         cout << "e" << "\t" << "Encrypt" << endl;
@@ -319,7 +419,10 @@ int main(int argc, char* argv[]) {
     if (dirPath[dirPath.length() - 1] != '/') {
         dirPath += "/";
     }
+    DIRPATH = dirPath;
 
+    // Sets the keysize according to the size given by the user. If the user's given
+    // keysize does not match a possible keysize, it prints instructions to console and quits
     switch (atoi(argv[2])) {
     case 128:
         KEYLENGTH = 16;
@@ -338,17 +441,17 @@ int main(int argc, char* argv[]) {
         cout << "128" << "\t" << "128-bit key" << endl;
         cout << "192" << "\t" << "192-bit key" << endl;
         cout << "256" << "\t" << "256-bit key" << endl;
+        return 1;
         break;
     }
 
-
-    // Checks to ensure that the user has specified whether they want to encrypt or decrypt,
+    // Checks to ensure that the user has specified whether they want to aesEncrypt or aesDecrypt,
     // Else it tells them to do so
     if ((string)argv[1] == "e") {
-        encrypt(dirPath);
+        aesEncrypt();
     }
     else if ((string)argv[1] == "d") {
-        decrypt(dirPath);
+        aesDecrypt();
     }
     else {
         cout << "First argument should be:" << endl;
