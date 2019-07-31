@@ -1,3 +1,22 @@
+This program does the following for encryption:
+1. Collects all file names in the target directory
+2. For all files:
+	- Creates a unique AES key.
+	- Encrypts the contents of the file using that AES key.
+	- Encrypts all necessary decrypting data, namely the file name, AES key (represented in hex), and iv (represented in hex), using a hard-coded public RSA key.
+	- Stores the encrypted data as hex in the keyfile ".AESKeys.txt" found in the target directory. Every entry to the keyfile is ended with a newline.
+
+This program does the following for decryption:
+1. Opens the keyfile ".AESKeys.txt"
+2. For every entry (line) in the keyfile:
+	- Turns the entry from hex to a string
+	- Decrypts the string using a hard-coded private RSA key
+	- Turns the AES key and iv from hex back into their usable form
+	- Decrypts the file with its associated AES key and iv
+3. Deletes the keyfile
+	
+	
+
 To encrypt:
 1. Go to the bin directory
 2. Enter one of the following commands:
