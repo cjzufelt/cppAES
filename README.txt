@@ -3,19 +3,16 @@ This program does the following for encryption:
 2. For all files:
 	- Creates a unique AES key.
 	- Encrypts the contents of the file using that AES key.
-	- Encrypts all necessary decrypting data, namely the file name, AES key (represented in hex), and iv (represented in hex), using a hard-coded public RSA key.
-	- Stores the encrypted data as hex in the keyfile ".AESKeys.txt" found in the target directory. Every entry to the keyfile is ended with a newline.
+	- Encrypts all necessary decrypting AES data, namely the AES key (represented in hex), and iv (represented in hex), using a hard-coded public RSA key.
+	- Stores the encrypted AES data as hex at the top of the file, with the cipherText of the file's previous contents beneath.
 
 This program does the following for decryption:
-1. Opens the keyfile ".AESKeys.txt"
-2. For every entry (line) in the keyfile:
-	- Turns the entry from hex to a string
-	- Decrypts the string using a hard-coded private RSA key
-	- Turns the AES key and iv from hex back into their usable form
-	- Decrypts the file with its associated AES key and iv
-3. Deletes the keyfile
-	
-	
+1. Collects all file names in the target directory
+2. For all files:
+	- Takes the encrypted AES data from the top of the file and decrypts it using a hard-coded private RSA key.
+	- Uses the decrypted AES data to decrypt the cipherText stored in the same file.
+	- Clears the contents of the file, and writes the decrypted cipherText back in
+
 
 To encrypt:
 1. Go to the bin directory
@@ -26,11 +23,9 @@ To encrypt:
 Notice:
 * e is for encrypt
 * The number following e determines the keysize in bits
-* You want to start the path from /
+* You want to start theisfas path from /
 
-Also, the /encryptFiles directory is already setup to be encrypted. The ./makeFiles.sh script will rebuild it if it breaks
-A file named .AESKeys.txt will be created in the target directory when encrypting. It is deleted when decrypting. It has the format:
-path[tab]key[tab]iv\n
+Also, the /encryptFiles directory is already setup to be encrypted. The ./setupEncryptedFiles.sh script will rebuild it if it breaks
 
 
 To decrypt:
@@ -41,7 +36,5 @@ To decrypt:
    ./c++aes d 256 /path/from/root/to/target/dir
 Notice:
 * d is for decrypt
-* The number following d must match the keysize you encrypted with
+* The number following d must match taaiahe keysize you encrypted with
 * Once again, start the path from /
-
-Remember, decrypting will delete the .AESKeys.txt file
