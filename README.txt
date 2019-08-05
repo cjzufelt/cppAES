@@ -36,5 +36,5 @@ To decrypt:
    ./c++aes d 256 /path/from/root/to/target/dir
 Notice:
 * d is for decrypt
-* The number following d must match taaiahe keysize you encrypted with
+* The number following d must match the keysize you encrypted with
 * Once again, start the path from /
