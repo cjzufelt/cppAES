@@ -6,6 +6,7 @@ g++ -g c++aes.cpp -I /usr/local/include/cryptopp/ /usr/local/lib/libcryptopp.a -
 #include <fstream>
 #include <vector>
 #include <dirent.h>
+#include <unistd.h>
 #include "modes.h"
 #include "aes.h"
 #include "rsa.h"
@@ -62,9 +63,6 @@ void writeAlteredContents(const string& filePath, const string& alteredContents)
 void aesEncrypt() {
     // Initializes vector with all file names and the file object that will be reading them
     vector<string> fileNames = getFileNames();
-
-    cout << "Public Key:" << endl;
-    cout << PUBLIC_KEY_HEX << endl << endl;
 
     // Iterates through file names and opens and encrypts them one by one
     for (int i = 0; i < fileNames.size(); ++i) {
@@ -331,6 +329,8 @@ void writeAlteredContents(const string& filePath, const string& alteredContents)
 
 
 int main(int argc, char* argv[]) {
+    cout << "PID: " << ::getpid() << endl << endl;
+
     // Checks to make sure the user entered all the necessary arguments
     if (argc != 4) {
         cout << endl << "First argument should be:" << endl;
