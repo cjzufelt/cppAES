@@ -148,7 +148,7 @@ string rsaEncrypt(const string& input) {
 
     // Setup the public key using the hardcoded global public key
     RSA::PublicKey publicKey;
-    StringSource publicSS(hexToString(PUBLIC_KEY_HEX_3072), true);
+    StringSource publicSS(hexToString(PUBLIC_KEY_HEX), true);
     publicKey.BERDecode(publicSS);
 
     // Encryption
@@ -232,7 +232,7 @@ string rsaDecrypt(const string& input) {
 
     // Setup the private key using the hardcoded global private key
     RSA::PrivateKey privateKey;
-    StringSource privateSS(hexToString(PRIVATE_KEY_HEX_3072), true);
+    StringSource privateSS(hexToString(PRIVATE_KEY_HEX), true);
     privateKey.BERDecode(privateSS);
 
     // Decryption
