@@ -13,28 +13,30 @@ This program does the following for decryption:
 	- Uses the decrypted AES data to decrypt the cipherText stored in the same file.
 	- Clears the contents of the file, and writes the decrypted cipherText back in
 
+Supported AES key sizes:
+	128
+	192
+	256
+
+Supported RSA key sizes:
+	1024
+	2048
+	3072
 
 To encrypt:
 1. Go to the bin directory
-2. Enter one of the following commands:
-   ./c++aes e 128 /path/from/root/to/target/dir
-   ./c++aes e 192 /path/from/root/to/target/dir
-   ./c++aes e 256 /path/from/root/to/target/dir
+2. Enter the following command:
+   ./c++aes e <AES key size> <RSA key size> /path/from/root/to/target/dir
 Notice:
 * e is for encrypt
-* The number following e determines the keysize in bits
-* You want to start theisfas path from /
+* You want to start the path from /
 
 Also, the /encryptFiles directory is already setup to be encrypted. The ./setupEncryptedFiles.sh script will rebuild it if it breaks
-
 
 To decrypt:
 1. Go to the bin directory
 2. Enter one of the following commands:
-   ./c++aes d 128 /path/from/root/to/target/dir
-   ./c++aes d 192 /path/from/root/to/target/dir
-   ./c++aes d 256 /path/from/root/to/target/dir
+   ./c++aes d <AES key size> <RSA key size> /path/from/root/to/target/dir
 Notice:
 * d is for decrypt
-* The number following d must match the keysize you encrypted with
 * Once again, start the path from /
