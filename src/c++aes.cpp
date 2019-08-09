@@ -1,5 +1,6 @@
 /*
 g++ -g c++aes.cpp -I /usr/local/include/cryptopp/ /usr/local/lib/libcryptopp.a -o ../bin/c++aes
+break TF_EncryptorBase::Encrypt
 */
 
 #include <iostream>
@@ -152,17 +153,31 @@ string rsaEncrypt(const string& input) {
     publicKey.BERDecode(publicSS);
 
     // Encryption
-    string encryptedString;
+    // string cipherText;
 
     RSAES_OAEP_SHA_Encryptor e(publicKey);
 
-    StringSource ss1(input, true,
-        new PK_EncryptorFilter(rng, e,
-            new StringSink(encryptedString)
-        ) // PK_EncryptorFilter
-    ); // StringSource
+    // Now that there is a concrete object, we can validate
+    // assert( 0 != e.FixedMaxPlaintextLength() );
+    // assert( plainText.size() <= e.FixedMaxPlaintextLength() );
 
-    return encryptedString;
+    SecByteBlock plainText((const byte*)input.data(), input.size());
+    // Create cipher text space
+    size_t ecl = e.CiphertextLength( input.size() );
+    // assert( 0 != ecl );
+    SecByteBlock cipherText( ecl);
+
+    e.Encrypt(rng, plainText, plainText.size(), cipherText);
+
+    // StringSource ss1(input, true,
+    //     new PK_EncryptorFilter(rng, e,
+    //         new StringSink(encryptedString)
+    //     ) // PK_EncryptorFilter
+    // ); // StringSource
+
+    string cipherTextString(reinterpret_cast<const char*>(cipherText.data()), cipherText.size());
+
+    return cipherTextString;
 }
 
 
