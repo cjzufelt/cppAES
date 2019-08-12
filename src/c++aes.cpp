@@ -152,29 +152,16 @@ string rsaEncrypt(const string& input) {
     StringSource publicSS(hexToString(PUBLIC_KEY_HEX), true);
     publicKey.BERDecode(publicSS);
 
-    // Encryption
-    // string cipherText;
-
+    // Initialize vital encryption variables
     RSAES_OAEP_SHA_Encryptor e(publicKey);
-
-    // Now that there is a concrete object, we can validate
-    // assert( 0 != e.FixedMaxPlaintextLength() );
-    // assert( plainText.size() <= e.FixedMaxPlaintextLength() );
-
     SecByteBlock plainText((const byte*)input.data(), input.size());
-    // Create cipher text space
     size_t ecl = e.CiphertextLength( input.size() );
-    // assert( 0 != ecl );
     SecByteBlock cipherText( ecl);
 
+    // Use the above variables to encrypt the input and store it in the cipherText
     e.Encrypt(rng, plainText, plainText.size(), cipherText);
 
-    // StringSource ss1(input, true,
-    //     new PK_EncryptorFilter(rng, e,
-    //         new StringSink(encryptedString)
-    //     ) // PK_EncryptorFilter
-    // ); // StringSource
-
+    // Convert the cipherText from SecByteBlock to string so it can be returned and easily used
     string cipherTextString(reinterpret_cast<const char*>(cipherText.data()), cipherText.size());
 
     return cipherTextString;
