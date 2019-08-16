@@ -2,6 +2,7 @@
 g++ -g c++aes.cpp -I /usr/local/include/cryptopp/ /usr/local/lib/libcryptopp.a -o ../bin/c++aes
 break TF_EncryptorBase::Encrypt
 break CryptoPP::PKCS_EncryptionPaddingScheme::Pad
+break CryptoPP::OAEP_Base::Pad
 break pubkey.cpp:165
 */
 
@@ -89,10 +90,13 @@ void aesEncrypt() {
         // Generates a unique AES key and iv, then uses them to encrypt the contents of the file
         AutoSeededRandomPool rnd;
 
+        // Code that generates unique AES keys and ivs
         // SecByteBlock key(0x00, KEYLENGTH);
         // SecByteBlock iv(AES::BLOCKSIZE);
         // rnd.GenerateBlock(key, key.size());
         // rnd.GenerateBlock(iv, iv.size());
+        
+        // Code that reuses the same AES key and iv for testing purposes
         string aesKeyString = hexToString(AES_KEY_HEX);
         string aesIVString = hexToString(AES_IV_HEX);
         SecByteBlock key((const byte*)aesKeyString.data(), aesKeyString.size());
@@ -161,7 +165,8 @@ string rsaEncrypt(const string& input) {
     publicKey.BERDecode(publicSS);
 
     // Initialize vital encryption variables
-    RSAES_PKCS1v15_Encryptor e(publicKey);
+    // RSAES_PKCS1v15_Encryptor e(publicKey);
+    RSAES_OAEP_SHA_Encryptor e(publicKey);
     SecByteBlock plainText((const byte*)input.data(), input.size());
     size_t ecl = e.CiphertextLength( input.size() );
     SecByteBlock cipherText( ecl);
@@ -248,7 +253,8 @@ string rsaDecrypt(const string& input) {
     // Decryption
     string decryptedString;
 
-    RSAES_PKCS1v15_Decryptor d(privateKey);
+    // RSAES_PKCS1v15_Decryptor d(privateKey);
+    RSAES_OAEP_SHA_Decryptor d(privateKey);
 
     StringSource ss2(input, true,
         new PK_DecryptorFilter(rng, d,
