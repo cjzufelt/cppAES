@@ -1,9 +1,13 @@
 /*
 g++ -g c++aes.cpp -I /usr/local/include/cryptopp/ /usr/local/lib/libcryptopp.a -o ../bin/c++aes
+
 break TF_EncryptorBase::Encrypt
-break CryptoPP::PKCS_EncryptionPaddingScheme::Pad
-break CryptoPP::OAEP_Base::Pad
 break pubkey.cpp:165
+
+break CryptoPP::PKCS_EncryptionPaddingScheme::Pad
+
+break CryptoPP::OAEP_Base::Pad
+break CryptoPP::OAEP_Base::Unpad
 */
 
 #include <iostream>
