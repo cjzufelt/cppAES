@@ -106,33 +106,19 @@ void aesEncrypt() {
         SecByteBlock key((const byte*)aesKeyString.data(), aesKeyString.size());
         SecByteBlock iv((const byte*)aesIVString.data(), aesIVString.size());
 
-        string cipherText = aesEncryptContents(key, iv, contents);
-
-        // Turns the key and iv from SecByteBlock to hex, so that it can be easily read and written
-        string keyHex(stringToHex(string(reinterpret_cast<const char*>(key.data()), key.size())));
-        string ivHex(stringToHex(string(reinterpret_cast<const char*>(iv.data()), iv.size())));
-
-        // Overwrite the SecByteBlock versions of the key and iv in memory, so they're harder to recover
-        rnd.GenerateBlock(key, key.size());
-        rnd.GenerateBlock(iv, iv.size());
-
-        // Creates the full line of AES data, including the fileName, keyHex, and ivHex
-        string aesData = keyHex + "\t" + ivHex;
-
         // Output the file name along with its key and iv
         cout << fileNames[i] << endl;
-        cout << "key: " << keyHex << "\t" << endl;
-        cout << "iv: " << ivHex << "\t" << endl << endl;
+        cout << "key: " << stringToHex(aesKeyString) << "\t" << endl;
+        cout << "iv: " << stringToHex(aesIVString) << "\t" << endl << endl;
 
-        // Overwrite the hex versions of the key and iv in memory, so they're harder to recover
-        keyHex = string(stringToHex(string(reinterpret_cast<const char*>(key.data()), key.size())));
-        ivHex = string(stringToHex(string(reinterpret_cast<const char*>(iv.data()), iv.size())));
+        // Encrypt the file contents
+        string cipherText = aesEncryptContents(key, iv, contents);
+
+        // Concatenate the key and the iv for RSA encryption
+        string aesData = aesKeyString + aesIVString;
 
         // Encrypt all necessary AES decryption data using the public RSA key
         string encryptedAESData = stringToHex(rsaEncrypt(aesData));
-
-        // Overwrite the plaintext encryptedAESData in memory
-        aesData = keyHex + "\t" + ivHex;
 
         // Deletes the previous data and writes the encrypted data to the file
         writeAlteredContents(DIRPATH + fileNames.at(i), encryptedAESData + "\n" + cipherText);
@@ -223,8 +209,8 @@ void aesDecrypt() {
         string aesData = rsaDecrypt(encryptedAESData);
 
         // Turn the keyHex and ivHex back into strings to they can be turned into SecByteBlocks
-        string keyString = hexToString(aesData.substr(0, aesData.find_first_of("\t")));
-        string ivString = hexToString(aesData.substr(aesData.find_first_of("\t") + 1));
+        string keyString = aesData.substr(0, KEYLENGTH);
+        string ivString = aesData.substr(KEYLENGTH);
 
         // Turn the keyString and ivString back into usable SecByteBlocks
         SecByteBlock key((const byte*)keyString.data(), keyString.size());
@@ -238,7 +224,6 @@ void aesDecrypt() {
 
         // Delete the encrypted contents from the file, and write the decrypted contents back in
         writeAlteredContents(DIRPATH + fileNames.at(i), plainText);
-
     }
 }
 
