@@ -108,8 +108,8 @@ void aesEncrypt() {
 
         // Output the file name along with its key and iv
         cout << fileNames[i] << endl;
-        cout << "key: " << stringToHex(aesKeyString) << "\t" << endl;
-        cout << "iv: " << stringToHex(aesIVString) << "\t" << endl << endl;
+        cout << "AES key: " << stringToHex(aesKeyString) << "\t" << endl;
+        cout << "AES iv:  " << stringToHex(aesIVString) << "\t" << endl << endl;
 
         // Encrypt the file contents
         string cipherText = aesEncryptContents(key, iv, contents);
