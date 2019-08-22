@@ -1,3 +1,5 @@
+This program was made possible by Crypto++ libraries. These can be found here: https://www.cryptopp.com/
+
 This program does the following for encryption:
 1. Collects all file names in the target directory
 2. For all files:
@@ -26,7 +28,7 @@ Supported RSA key sizes:
 To encrypt:
 1. Go to the bin directory
 2. Enter the following command:
-   ./c++aes e <AES key size> <RSA key size> /path/from/root/to/target/dir
+   ./cppAES e <AES key size> <RSA key size> /path/from/root/to/target/dir
 Notice:
 * e is for encrypt
 * You want to start the path from /
@@ -36,7 +38,7 @@ Also, the /encryptFiles directory is already setup to be encrypted. The ./setupE
 To decrypt:
 1. Go to the bin directory
 2. Enter one of the following commands:
-   ./c++aes d <AES key size> <RSA key size> /path/from/root/to/target/dir
+   ./cppAES d <AES key size> <RSA key size> /path/from/root/to/target/dir
 Notice:
 * d is for decrypt
 * Once again, start the path from /
