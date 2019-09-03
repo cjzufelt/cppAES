@@ -95,27 +95,25 @@ void aesEncrypt() {
         AutoSeededRandomPool rnd;
 
         // Code that generates unique AES keys and ivs
-        // SecByteBlock key(0x00, KEYLENGTH);
-        // SecByteBlock iv(AES::BLOCKSIZE);
-        // rnd.GenerateBlock(key, key.size());
-        // rnd.GenerateBlock(iv, iv.size());
-        
-        // Code that reuses the same AES key and iv for testing purposes
-        string aesKeyString = hexToString(AES_KEY_HEX);
-        string aesIVString = hexToString(AES_IV_HEX);
-        SecByteBlock key((const byte*)aesKeyString.data(), aesKeyString.size());
-        SecByteBlock iv((const byte*)aesIVString.data(), aesIVString.size());
+        SecByteBlock key(0x00, KEYLENGTH);
+        SecByteBlock iv(AES::BLOCKSIZE);
+        rnd.GenerateBlock(key, key.size());
+        rnd.GenerateBlock(iv, iv.size());
+
+        // Encrypt the file contents
+        string cipherText = aesEncryptContents(key, iv, contents);
+
+        // Turn keys into easily storable and printable strings
+        string aesKeyString(string(reinterpret_cast<const char*>(key.data()), key.size()));
+        string aesIVString(string(reinterpret_cast<const char*>(iv.data()), iv.size()));
+
+        // Concatenate the key and the iv for RSA encryption
+        string aesData = aesKeyString + aesIVString;
 
         // Output the file name along with its key and iv
         cout << fileNames[i] << endl;
         cout << "AES key: " << stringToHex(aesKeyString) << "\t" << endl;
         cout << "AES iv:  " << stringToHex(aesIVString) << "\t" << endl << endl;
-
-        // Encrypt the file contents
-        string cipherText = aesEncryptContents(key, iv, contents);
-
-        // Concatenate the key and the iv for RSA encryption
-        string aesData = aesKeyString + aesIVString;
 
         // Encrypt all necessary AES decryption data using the public RSA key
         string encryptedAESData = stringToHex(rsaEncrypt(aesData));
@@ -155,7 +153,6 @@ string rsaEncrypt(const string& input) {
     publicKey.BERDecode(publicSS);
 
     // Initialize vital encryption variables
-    // RSAES_PKCS1v15_Encryptor e(publicKey);
     RSAES_OAEP_SHA_Encryptor e(publicKey);
     SecByteBlock plainText((const byte*)input.data(), input.size());
     size_t ecl = e.CiphertextLength( input.size() );
@@ -242,7 +239,6 @@ string rsaDecrypt(const string& input) {
     // Decryption
     string decryptedString;
 
-    // RSAES_PKCS1v15_Decryptor d(privateKey);
     RSAES_OAEP_SHA_Decryptor d(privateKey);
 
     StringSource ss2(input, true,
